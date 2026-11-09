@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Echogaming Neon</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080b18;color:white;font-family:Arial,sans-serif}
+header{padding:20px;text-align:center;background:#10182c;border-bottom:2px solid #00eaff}
+h1{color:#00eaff;text-shadow:0 0 15px #00eaff}
+main{max-width:700px;margin:auto;padding:18px}
+.card{background:#141e35;border:1px solid #33466b;border-radius:16px;padding:18px;margin:15px 0}
+button{border:0;padding:13px;border-radius:10px;font-weight:bold;cursor:pointer;background:#00eaff;color:#06101b;margin:4px}
+input{padding:12px;width:100%;border-radius:8px;background:#080e20;color:white;border:1px solid #00eaff;margin:8px 0}
+.games{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.games button{padding:16px}
+.result{background:#080e20;border-radius:12px;padding:18px;text-align:center;margin-top:12px;color:#00eaff;font-size:20px}
+.small{color:#9caecc;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+<h1>⚡ ECHOGAMING ⚡</h1>
+<p>NEON ARCADE</p>
+<div>DEMO WALLET: 🪙 <b id="wallet">10000</b></div>
+</header>
+<main>
+<div class="card">
+<h2>🎮 SELECT YOUR GAME</h2>
+<div class="games">
+<button onclick="show('wingo')">🔴 WinGo</button>
+<button onclick="show('aviator')">✈️ Aviator</button>
+<button onclick="show('k3')">🎲 K3 Dice</button>
+<button onclick="show('five')">🎯 5D</button>
+</div>
+</div>
+
+<div class="card" id="game">
+<h2>🔴 WinGo</h2>
+<p class="small">Virtual coins only. No real money.</p>
+<input id="stake" type="number" value="100" min="10" max="1000">
+<div id="controls">
+<button onclick="pick='RED';this.style.outline='2px solid white'">RED</button>
+<button onclick="pick='GREEN';this.style.outline='2px solid white'">GREEN</button>
+<button onclick="pick='VIOLET';this.style.outline='2px solid white'">VIOLET</button>
+</div>
+<br>
+<button onclick="play()">PLAY GAME</button>
+<div class="result" id="result">WELCOME TO ECHOGAMING</div>
+</div>
+
+<div class="card">
+<h3>🏆 PLAYER STATS</h3>
+<p>Games Played: <b id="played">0</b></p>
+<p>Net Demo Coins: <b id="net">0</b></p>
+<button onclick="reset()">RESET ACCOUNT</button>
+</div>
+<p class="small">Echogaming v1.0 | Android + PC | Offline Demo</p>
+</main>
+
+<script>
+let balance=10000,played=0,net=0,pick=null,game='wingo',flight=null;
+function update(){
+ document.getElementById('wallet').textContent=balance;
+ document.getElementById('played').textContent=played;
+ document.getElementById('net').textContent=net;
+}
+function show(g){
+ game=g;pick=null;
+ let names={wingo:'🔴 WinGo',aviator:'✈️ Aviator',k3:'🎲 K3 Dice',five:'🎯 5D'};
+ document.querySelector('#game h2').textContent=names[g];
+ document.getElementById('result').textContent='Choose and play!';
+ let c=document.getElementById('controls');
+ if(g==='wingo')c.innerHTML='<button onclick="pick=\'RED\'">RED</button><button onclick="pick=\'GREEN\'">GREEN</button><button onclick="pick=\'VIOLET\'">VIOLET</button>';
+ if(g==='k3')c.innerHTML='<div id="dice"></div>';
+ if(g==='five')c.innerHTML='<input id="number" maxlength="5" placeholder="Enter 5 digits">';
+ if(g==='aviator')c.innerHTML='<p>Cash out before the flight crashes!</p>';
+ if(g==='k3'){
+  for(let i=1;i<=6;i++)c.innerHTML+=`<button onclick="pick=${i}">${i}</button>`;
+ }
+ document.querySelector('#game > button').textContent=g==='aviator'?'START FLIGHT':'PLAY GAME';
+}
+function play(){
+ let s=Number(document.getElementById('stake').value);
+ if(!Number.isInteger(s)||s<10||s>1000||s>balance){alert('Enter valid stake (10–1000).');return}
+ if(game==='aviator'){startFlight(s);return}
+ if(game==='wingo'&&!pick){alert('Select a colour first');return}
+ if(game==='k3'&&!pick){alert('Select a number');return}
+ if(game==='five'){
+  let n=document.getElementById('number').value;
+  if(!/^\d{5}$/.test(n)){alert('Enter exactly 5 digits');return}
+  let r=String(Math.floor(Math.random()*100000)).padStart(5,'0');
+  let matches=[...n].filter((x,i)=>x===r[i]).length;
+  finish(s,matches===5?s*20:matches===4?s*3:matches===3?s:-s,
+  `Result: ${r} | Matches: ${matches}/5`);return;
+ }
+ if(game==='wingo'){
+  let r=['RED','GREEN','VIOLET'][Math.floor(Math.random()*3)];
+  finish(s,r===pick?s*2:-s,'Result: '+r+' | Your pick: '+pick);return;
+ }
+ if(game==='k3'){
+  let r=1+Math.floor(Math.random()*6);
+  finish(s,r===pick?s*5:-s,'Dice result: '+r+' | Your pick: '+pick);return;
+ }
+}
+function finish(s,delta,msg){
+ balance+=delta;net+=delta;played++;update();
+ document.getElementById('result').textContent=msg+' | '+(delta>=0?'+':'')+delta+' coins';
+}
+function startFlight(s){
+ let crash=1.2+Math.random()*4,m=1;
+ document.querySelector('#game > button').disabled=true;
+ document.getElementById('result').textContent='1.00x';
+ flight=setInterval(()=>{
+  m+=0.04;document.getElementById('result').textContent=m.toFixed(2)+'x';
+  if(m>=crash){
+   clearInterval(flight);flight=null;
+   finish(s,-s,'💥 CRASH at '+m.toFixed(2)+'x');
+   document.querySelector('#game > button').disabled=false;
+  }
+ },150);
+}
+function reset(){
+ if(!confirm('Reset demo account?'))return;
+ if(flight){clearInterval(flight);flight=null}
+ balance=10000;played=0;net=0;update();
+ document.querySelector('#game > button').disabled=false;
+ document.getElementById('result').textContent='Account reset!';
+}
+update();
+</script>
+</body>
+</html>
